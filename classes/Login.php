@@ -143,8 +143,11 @@ class Login extends DBConnection {
 	
 	public function flogin(){
 		extract($_POST);
-
-		$qry = $this->conn->query("SELECT * from faculty where  faculty_id = '$faculty_id' and `password` = '".md5($password)."' ");
+		
+		$faculty_id = ($_POST['faculty_id']);
+		$faculty_id = ($_POST['faculty_id']);
+		$password   =  $_POST['password'];
+		$qry = $this->conn->query("SELECT * from faculty where  faculty_id = '$faculty_id' and `password` = '$password' ");
 		if($qry->num_rows > 0){
 			foreach($qry->fetch_array() as $k => $v){
 				if(!is_numeric($k)){
@@ -164,6 +167,26 @@ class Login extends DBConnection {
 		return json_encode(array('status'=>'incorrect'));
 		}
 	}
+
+	public function getStudentLectures($student_id) {
+		$sql = "SELECT * FROM upload_files u
+				JOIN faculty_student_relationship fsr ON fsr.faculty_id = u.faculty_id
+				WHERE fsr.student_id = ?";
+	
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bind_param("i", $student_id);
+		$stmt->execute();
+	
+		$result = $stmt->get_result();
+		$lectures = [];
+	
+		while ($row = $result->fetch_assoc()) {
+			$lectures[] = $row;
+		}
+	
+		return $lectures;
+	}
+	
 	public function slogin() {
 		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$student_id = $_POST['student_id'];
@@ -208,7 +231,7 @@ class Login extends DBConnection {
 		}
 		return json_encode(['status' => 'error', 'message' => 'Invalid request method']);
 	}
-	
+
 	public function logout(){
 		if($this->settings->sess_des()){
 			redirect('admin/login.php');
@@ -247,6 +270,7 @@ switch ($action) {
 	case 'slogin':
 		echo $auth->slogin();
 		break;
+	
 	case 'logout':
 		echo $auth->logout();
 		break;
